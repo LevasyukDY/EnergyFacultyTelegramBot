@@ -13,3 +13,19 @@
 Исходный код frontend части сайта вы можете найти [в моём репозитории](https://github.com/LevasyukDY/EnergyFacultyWebsite).
 
 Исходный код backend сайта вы можете найти [в репозитории](https://github.com/TseplyaevAF/energy_faculty) моего партнёра.
+
+## Структура проекта
+
+```
+├── config.py
+├── create_bot.py
+├── handlers
+│  ├── __init__.py
+│  ├── client.py
+│  └── other.py
+├── keyboards
+│  ├── __init__.py
+│  └── client_kb.py
+├── main.py
+└── README.md
+```
