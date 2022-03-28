@@ -1,11 +1,12 @@
 from aiogram import Dispatcher, types
 from create_bot import dp, bot
+from keyboards import kb_client
 
 # @dp.message_handler(commands=['start', 'help'])
 async def command_start(message : types.Message):
   try:
     await bot.send_message(message.from_user.id, 
-      'Привет!\nПока что я почти ничего не умею, но скоро это исправится')
+      'Привет!\nПока что я почти ничего не умею, но скоро это исправится', reply_markup=kb_client)
     await message.delete()
   except:
     await message.reply('Общение с ботом происходит в лс, напишите ему!')

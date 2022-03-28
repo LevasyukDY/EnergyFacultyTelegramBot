@@ -3,6 +3,6 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 b1 = KeyboardButton('Персоналии')
 b2 = KeyboardButton('Расписание')
 
-kb_client = ReplyKeyboardMarkup()
+kb_client = ReplyKeyboardMarkup(resize_keyboard=True)
 
 kb_client.row(b1, b2)
