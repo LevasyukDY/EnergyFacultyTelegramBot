@@ -3,14 +3,13 @@ from datetime import datetime
 from create_bot import dp
 
 
-# @dp.message_handler()
 async def echo_send(message : types.Message):
   if message.text.lower() == 'привет':
     await message.answer('Привет!')
   elif message.text.lower() == 'пока':
     await message.answer('До скорого!')
   elif message.text.lower() == 'сколько время?' or message.text.lower() == 'который час?':
-    await message.answer(f'Сейчас {datetime.now().time().hour}:{datetime.now().time().minute} по Читинскому времени')
+    await message.answer(f'Сейчас {str(datetime.now().time().hour)}:{str(datetime.now().time().minute)} по Читинскому времени')
   else:
     await message.answer('Я вас не понимаю...')
 
