@@ -17,16 +17,16 @@
 ## Структура проекта
 
 ```
-├── config.py           <- файл, хранящий в себе токен бота
-├── create_bot.py       <- модуль, создающий экземпляр бота
-├── handlers            <- каталог, хранящий в себе хэндлеры бота
-│  ├── __init__.py          <- файл с импортом модулей client и other
-│  ├── client.py            <- клиентская часть для работы с ботом
-│  └── other.py             <- содержит хэндлер с другими менее важными командами
-├── keyboards           <- каталог, хранящий модуль создания кнопок
-│  ├── __init__.py          <- файл с импортом модуля client_kb
-│  └── client_kb.py         <- модуль, создающий кнопки
-├── main.py             <- главная точка входа
+├── config.py           – файл, хранящий в себе токен бота
+├── create_bot.py       – модуль, создающий экземпляр бота
+├── handlers            – каталог, хранящий в себе хэндлеры бота
+│  ├── __init__.py          – файл с импортом модулей client и other
+│  ├── client.py            – клиентская часть для работы с ботом
+│  └── other.py             – содержит хэндлер с другими менее важными командами
+├── keyboards           – каталог, хранящий модуль создания кнопок
+│  ├── __init__.py          – файл с импортом модуля client_kb
+│  └── client_kb.py         – модуль, создающий кнопки
+├── main.py             – главная точка входа
 └── README.md
 ```
 
@@ -51,7 +51,7 @@ venv/bin/activate
 ```
 Package            Version
 ------------------ ---------
-aiogram            2.19         <- pip install aiogram
+aiogram            2.19         – pip install aiogram
 aiohttp            3.8.1
 aiosignal          1.2.0
 async-timeout      4.0.2
@@ -64,7 +64,7 @@ idna               3.3
 multidict          6.0.2
 pip                22.0.4
 pytz               2022.1
-requests           2.27.1       <- pip install requests
+requests           2.27.1       – pip install requests
 setuptools         58.1.0
 soupsieve          2.3.1
 urllib3            1.26.9
