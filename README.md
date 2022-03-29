@@ -48,6 +48,7 @@ idna               3.3
 multidict          6.0.2
 pip                22.0.4
 pytz               2022.1
+requests           2.27.1
 setuptools         58.1.0
 soupsieve          2.3.1
 urllib3            1.26.9
