@@ -1,10 +1,10 @@
-from tkinter import E
-from turtle import title
 from aiogram import Dispatcher, types
-from create_bot import dp, bot
+from aiogram.dispatcher.filters import Text
+from create_bot import bot
 from keyboards import kb_client
 import requests
-from pprint import pprint
+from aiogram.types.input_file import InputFile
+import os
 
 
 async def command_start(message : types.Message):
@@ -21,19 +21,36 @@ async def get_news(message : types.Message):
       r = requests.get("http://127.0.0.1:8000/api/news")
       data = r.json()
 
-      # Метод send_photo() ищет картинки с серверов телеграм и не находит нашу локальную БД
-      # storageURL = "http://127.0.0.1:8000/storage/"
-      # photoURL = ""
+      storageURL = "http://127.0.0.1:8000/storage/"
 
       i = 0
       while i < len(data):
-        # photoURL = storageURL + data[i]["preview"]
+        if data[i]["preview"] is not None:
+          if 'http' not in data[i]["preview"]: 
+            photoURL = storageURL + data[i]["preview"]
+            p = requests.get(photoURL)
+            newsId = data[i]["id"]
+            out = open(f"{newsId}.jpg", "wb")
+            out.write(p.content)
+            out.close()
+            photo = InputFile(f"{newsId}.jpg")
+          else:
+            photo = data[i]["preview"]
+        else:
+          photo = data[i]["images"][0]
+
         await bot.send_photo(
           chat_id=message.chat.id, 
-          photo="https://www.morristourism.org/wp-content/uploads/2017/09/this-is-a-test-image.png", 
+          photo=photo,
           caption=data[i]["title"]
         )
+
+        if data[i]["preview"] is not None:
+          if 'http' not in data[i]["preview"]: 
+            os.remove(f"{newsId}.jpg")
+
         i += 1
+        
   except Exception as ex:
     print(ex)
     print('Ошибка получения списка новостей')
@@ -41,4 +58,4 @@ async def get_news(message : types.Message):
 
 def register_handlers_client(dp : Dispatcher):
   dp.register_message_handler(command_start, commands=['start', 'help'])
-  dp.register_message_handler(get_news)
+  dp.register_message_handler(get_news, Text(equals='новости', ignore_case=True))
