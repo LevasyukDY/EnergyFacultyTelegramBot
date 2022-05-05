@@ -1,10 +1,12 @@
-from aiogram import Dispatcher, types
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types.input_file import InputFile
 from aiogram.dispatcher.filters import Text
+from aiogram import Dispatcher, types
 from create_bot import bot
 from keyboards import kb_client
 import requests
-from aiogram.types.input_file import InputFile
 import os
+import re
 
 
 async def command_start(message : types.Message):
@@ -20,11 +22,12 @@ async def get_news(message : types.Message):
     if message.text.lower() == 'новости':
       r = requests.get("http://127.0.0.1:8000/api/news")
       data = r.json()
+      data.reverse()
 
       storageURL = "http://127.0.0.1:8000/storage/"
 
       i = 0
-      while i < len(data):
+      while i < 5:
         if data[i]["preview"] is not None:
           if 'http' not in data[i]["preview"]: 
             photoURL = storageURL + data[i]["preview"]
@@ -39,10 +42,25 @@ async def get_news(message : types.Message):
         else:
           photo = data[i]["images"][0]
 
+        messageText = "<b>" + data[i]["title"] + "</b>\n\n"
+
+        contentText = re.sub(r"<[^>]*>", " ", data[i]["content"])
+        contentText = re.sub(r"&[^;]*;", " ", contentText)
+        contentText = contentText.strip()
+        contentText = re.sub(r" +", " ", contentText)
+
+        messageText = messageText + contentText[:283] + "..."
+        
+        btn = InlineKeyboardButton("Читать", "http://192.168.1.6:8080/news/" + str(data[i]["id"]))
+        ikb_postURL = InlineKeyboardMarkup()
+        ikb_postURL.row(btn)
+
         await bot.send_photo(
           chat_id=message.chat.id, 
           photo=photo,
-          caption=data[i]["title"]
+          caption=messageText,
+          parse_mode="HTML",
+          reply_markup=ikb_postURL
         )
 
         if data[i]["preview"] is not None:

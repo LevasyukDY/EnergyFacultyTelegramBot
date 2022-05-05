@@ -5,7 +5,7 @@ from handlers import client, other
 
 
 async def on_sturtup(_):
-  print('<---------- БОТ ВЫШЕЛ В ОНЛАЙН ---------->')
+  print('\n\n\n<---------- БОТ ВЫШЕЛ В ОНЛАЙН ---------->\n')
 
 logging.basicConfig(level=logging.INFO)
 
