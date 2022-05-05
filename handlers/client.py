@@ -2,11 +2,9 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types.input_file import InputFile
 from aiogram.dispatcher.filters import Text
 from aiogram import Dispatcher, types
-from create_bot import bot
 from keyboards import kb_client
-import requests
-import os
-import re
+from create_bot import bot
+import requests, os, re
 
 
 async def command_start(message : types.Message):

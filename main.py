@@ -1,7 +1,7 @@
 from aiogram.utils import executor
+from handlers import client, other
 from create_bot import dp
 import logging
-from handlers import client, other
 
 
 async def on_sturtup(_):
