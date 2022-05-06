@@ -1,4 +1,3 @@
-from tokenize import group
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher import FSMContext
 
@@ -7,7 +6,7 @@ from aiogram.types.input_file import InputFile
 from aiogram.dispatcher.filters import Text
 from aiogram import Dispatcher, types
 from keyboards import kb_client
-from create_bot import bot, dp
+from create_bot import bot
 import requests, os, re
 
 
