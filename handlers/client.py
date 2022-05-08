@@ -83,26 +83,37 @@ async def cancel_schedules(message : types.Message, state: FSMContext):
   if current_state is None:
     return
   await state.finish()
-  await message.answer('ОК')
+  await message.answer('ОК', reply_markup=kb_client)
 
 
 async def input_group(message: types.Message, state: FSMContext):
+  temp = ''
   async with state.proxy() as data:
-    data['group'] = message.text
-  # async with state.proxy() as data:
-  #   r = requests.get("http://127.0.0.1:8000/api/schedules")
-  #   api = r.json()
-  #   my_reply = ''
-  #   for i in range(len(api)):
-  #     if str(data["group"]) == api[i]["lesson"]["group"]:
-  #       my_reply = my_reply + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
-  #   if my_reply == '': 
-  #     await message.answer('Такой группы нет')
-  #   else:
-  #     await message.answer(my_reply)
-  # await state.finish()
-  await message.answer('Введите день', reply_markup=kb_day)
-  await FSMSchedules.next()
+    r = requests.get("http://127.0.0.1:8000/api/schedules")
+    api = r.json()
+    for i in range(len(api)):
+      if message.text == api[i]["lesson"]["group"]:
+        temp = api[i]["lesson"]["group"]
+  if temp == '':
+    await message.answer('Такой группы нет', reply_markup=kb_client)
+    await state.finish()
+  else:
+    async with state.proxy() as data:
+      data['group'] = message.text
+    # async with state.proxy() as data:
+    #   r = requests.get("http://127.0.0.1:8000/api/schedules")
+    #   api = r.json()
+    #   my_reply = ''
+    #   for i in range(len(api)):
+    #     if str(data["group"]) == api[i]["lesson"]["group"]:
+    #       my_reply = my_reply + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
+    #   if my_reply == '': 
+    #     await message.answer('Такой группы нет')
+    #   else:
+    #     await message.answer(my_reply)
+    # await state.finish()
+    await message.answer('Введите день', reply_markup=kb_day)
+    await FSMSchedules.next()
 
 
 async def input_day(message: types.Message, state: FSMContext):
