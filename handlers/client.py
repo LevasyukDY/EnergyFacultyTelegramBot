@@ -115,9 +115,9 @@ async def input_day(message: types.Message, state: FSMContext):
         if str(data["group"]) == api[i]["lesson"]["group"]:
           my_reply = my_reply + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + ' ' + api[i]["week_type"] + '\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
       if my_reply == '': 
-        await message.answer('Пар на этой неделе нет')
+        await message.answer('Пар на этой неделе нет', reply_markup=kb_client)
       else:
-        await message.answer(my_reply)
+        await message.answer(my_reply, reply_markup=kb_client)
   elif (message.text.lower() == 'сегодня'):
     async with state.proxy() as data:
       input_weekday = datetime.today().weekday()
