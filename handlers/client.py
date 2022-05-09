@@ -29,36 +29,36 @@ async def command_start(message : types.Message):
 
 
 async def get_news(message : types.Message):
-  r = requests.get("http://127.0.0.1:8000/api/news")
+  r = requests.get("http://127.0.0.1:8000/api/news?per_page=1&page=1")
   data = r.json()
-  data.reverse()
+  data["data"].reverse()
 
   storageURL = "http://127.0.0.1:8000/storage/"
 
   i = 0
-  while i < 4:
-    if data[i]["preview"] is not None:
-      if 'http' not in data[i]["preview"]: 
-        photoURL = storageURL + data[i]["preview"]
+  while i < len(data["data"]):
+    if data["data"][i]["preview"] is not None:
+      if 'http' not in data["data"][i]["preview"]: 
+        photoURL = storageURL + data["data"][i]["preview"]
         p = requests.get(photoURL)
-        newsId = data[i]["id"]
+        newsId = data["data"][i]["id"]
         out = open(f"{newsId}.jpg", "wb")
         out.write(p.content)
         out.close()
         photo = InputFile(f"{newsId}.jpg")
       else:
-        photo = data[i]["preview"]
+        photo = data["data"][i]["preview"]
     else:
-      photo = data[i]["images"][0]
+      photo = data["data"][i]["images"][0]
 
-    messageText = "<b>" + data[i]["title"] + "</b>\n\n"
-    contentText = re.sub(r"<[^>]*>", " ", data[i]["content"])
+    messageText = "<b>" + data["data"][i]["title"] + "</b>\n\n"
+    contentText = re.sub(r"<[^>]*>", " ", data["data"][i]["content"])
     contentText = re.sub(r"&[^;]*;", " ", contentText)
     contentText = contentText.strip()
     contentText = re.sub(r" +", " ", contentText)
     messageText = messageText + contentText[:283] + "..."
     
-    btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data[i]["id"]))
+    btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
     ikb_postURL = InlineKeyboardMarkup()
     ikb_postURL.row(btn)
 
@@ -70,8 +70,8 @@ async def get_news(message : types.Message):
       reply_markup=ikb_postURL
     )
 
-    if data[i]["preview"] is not None:
-      if 'http' not in data[i]["preview"]: 
+    if data["data"][i]["preview"] is not None:
+      if 'http' not in data["data"][i]["preview"]: 
         os.remove(f"{newsId}.jpg")
     i += 1
 
