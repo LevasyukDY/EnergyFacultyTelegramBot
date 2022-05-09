@@ -108,18 +108,6 @@ async def input_group(message: types.Message, state: FSMContext):
   else:
     async with state.proxy() as data:
       data['group'] = message.text
-    # async with state.proxy() as data:
-    #   r = requests.get("http://127.0.0.1:8000/api/schedules")
-    #   api = r.json()
-    #   my_reply = ''
-    #   for i in range(len(api)):
-    #     if str(data["group"]) == api[i]["lesson"]["group"]:
-    #       my_reply = my_reply + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
-    #   if my_reply == '': 
-    #     await message.answer('Такой группы нет')
-    #   else:
-    #     await message.answer(my_reply)
-    # await state.finish()
     await message.answer('Введите день', reply_markup=kb_day)
     await FSMSchedules.next()
 
@@ -132,11 +120,11 @@ async def input_day(message: types.Message, state: FSMContext):
       my_reply = ''
       for i in range(len(api)):
         if str(data["group"]) == api[i]["lesson"]["group"]:
-          my_reply = my_reply + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + ' ' + api[i]["week_type"] + '\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
+          my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + ' ' + api[i]["week_type"] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
       if my_reply == '': 
         await message.answer('Пар на этой неделе нет', reply_markup=kb_client)
       else:
-        await message.answer(my_reply, reply_markup=kb_client)
+        await message.answer(my_reply, reply_markup=kb_client, parse_mode='Markdown')
   elif (message.text.lower() == 'сегодня'):
     async with state.proxy() as data:
       input_weekday = datetime.today().weekday()
@@ -155,9 +143,11 @@ async def input_day(message: types.Message, state: FSMContext):
         if str(data["group"]) == api[i]["lesson"]["group"]:
           if str(data["day"]) == api[i]["day"]:
             if str(data["group"]) == api[i]["lesson"]["group"]:
-              my_reply = my_reply + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + ' ' + api[i]["week_type"] + '\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
+              my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + ' ' + api[i]["week_type"] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
     if my_reply == '': 
       await message.answer(f'Пар на {data["day"]} не запланировано', reply_markup=kb_client)
+    else:
+      await message.answer(my_reply, reply_markup=kb_client, parse_mode='Markdown')
   elif (message.text.lower() == 'завтра'):
     async with state.proxy() as data:
       input_weekday = datetime.today().weekday()
@@ -176,9 +166,11 @@ async def input_day(message: types.Message, state: FSMContext):
         if str(data["group"]) == api[i]["lesson"]["group"]:
           if str(data["day"]) == api[i]["day"]:
             if str(data["group"]) == api[i]["lesson"]["group"]:
-              my_reply = my_reply + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + ' ' + api[i]["week_type"] + '\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
+              my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + ' ' + api[i]["week_type"] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
       if my_reply == '': 
         await message.answer(f'Пар на {data["day"]} не запланировано', reply_markup=kb_client)
+      else:
+        await message.answer(my_reply, reply_markup=kb_client, parse_mode='Markdown')
   else:
     await message.answer('Некоректные входные данные', reply_markup=kb_client)
   await state.finish()
@@ -190,7 +182,7 @@ async def input_full_name(message: types.Message, state: FSMContext):
   my_reply = ''
   for i in range(len(api)):
     my_reply = my_reply + '*' + api[i]["surname"] + ' ' + api[i]["name"] + ' ' + api[i]["patronymic"] + '*\n' + api[i]["post"] + ' ' + api[i]["chair"]["title"] + '\nТелефон: ' + api[i]["work_phone"] + '\nСсылка: ' + api[i]["link"] + '\n\n'
-  await message.answer(my_reply, reply_markup=kb_client, parse_mode='Markdown')
+  await message.answer(my_reply, reply_markup=kb_client, parse_mode='Markdown', disable_web_page_preview=True)
   await state.finish()
 
 
