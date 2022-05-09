@@ -15,6 +15,9 @@ class FSMSchedules(StatesGroup):
   group = State()
   day = State()
 
+class FSMTeachers(StatesGroup):
+  search = State()
+
 
 async def command_start(message : types.Message):
   try:
@@ -76,6 +79,11 @@ async def get_news(message : types.Message):
 async def get_schedules(message : types.Message):
   await FSMSchedules.group.set()
   await message.answer('Напишите свою группу')
+
+
+async def get_teachers(message : types.Message):
+  await FSMTeachers.search.set()
+  await message.answer('Введите хотя бы часть ФИО')
 
 
 async def cancel_schedules(message : types.Message, state: FSMContext):
@@ -176,12 +184,23 @@ async def input_day(message: types.Message, state: FSMContext):
   await state.finish()
 
 
+async def input_full_name(message: types.Message, state: FSMContext):
+  r = requests.get("http://127.0.0.1:8000/api/teachers?full_name=" + message.text)
+  api = r.json()
+  my_reply = ''
+  for i in range(len(api)):
+    my_reply = my_reply + '*' + api[i]["surname"] + ' ' + api[i]["name"] + ' ' + api[i]["patronymic"] + '*\n' + api[i]["post"] + ' ' + api[i]["chair"]["title"] + '\nТелефон: ' + api[i]["work_phone"] + '\nСсылка: ' + api[i]["link"] + '\n\n'
+  await message.answer(my_reply, reply_markup=kb_client, parse_mode='Markdown')
+  await state.finish()
+
 
 def register_handlers_client(dp : Dispatcher):
   dp.register_message_handler(command_start, commands=['start', 'help'])
   dp.register_message_handler(get_news, Text(equals='новости', ignore_case=True))
   dp.register_message_handler(get_schedules, Text(equals='расписание', ignore_case=True), state=None)
+  dp.register_message_handler(get_teachers, Text(equals='персоналии', ignore_case=True), state=None)
   dp.register_message_handler(cancel_schedules, state="*", commands='отмена')
   dp.register_message_handler(cancel_schedules, Text(equals='отмена', ignore_case=True), state="*")
   dp.register_message_handler(input_group, state=FSMSchedules.group)
   dp.register_message_handler(input_day, state=FSMSchedules.day)
+  dp.register_message_handler(input_full_name, state=FSMTeachers.search)
