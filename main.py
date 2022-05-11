@@ -14,7 +14,12 @@ other.register_handlers_other(dp)
 
 
 def main():
-  executor.start_polling(dp, skip_updates=True, on_startup=on_sturtup)
+  while True:
+    try:
+      executor.start_polling(dp, skip_updates=True, on_startup=on_sturtup)
+      break
+    except Exception as e:
+      print(e)
 
 
 if __name__ == '__main__':
