@@ -1,3 +1,5 @@
+from cgitb import text
+from subprocess import call
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher import FSMContext
 
@@ -6,7 +8,7 @@ from aiogram.types.input_file import InputFile
 from aiogram.dispatcher.filters import Text
 from aiogram import Dispatcher, types
 from keyboards import kb_client, kb_day
-from create_bot import bot
+from create_bot import bot, dp
 from datetime import datetime
 import requests, os, re
 
@@ -29,52 +31,195 @@ async def command_start(message : types.Message):
 
 
 async def get_news(message : types.Message):
-  r = requests.get("http://127.0.0.1:8000/api/news?per_page=1&page=1")
-  data = r.json()
-  data["data"].reverse()
+  try:
+    r = requests.get("http://127.0.0.1:8000/api/news?per_page=1&page=1")
+    data = r.json()
+    data["data"].reverse()
 
-  storageURL = "http://127.0.0.1:8000/storage/"
+    storageURL = "http://127.0.0.1:8000/storage/"
 
-  i = 0
-  while i < len(data["data"]):
-    if data["data"][i]["preview"] is not None:
-      if 'http' not in data["data"][i]["preview"]: 
-        photoURL = storageURL + data["data"][i]["preview"]
-        p = requests.get(photoURL)
-        newsId = data["data"][i]["id"]
-        out = open(f"{newsId}.jpg", "wb")
-        out.write(p.content)
-        out.close()
-        photo = InputFile(f"{newsId}.jpg")
+    i = 0
+    while i < len(data["data"]):
+      if data["data"][i]["preview"] is not None:
+        if 'http' not in data["data"][i]["preview"]: 
+          photoURL = storageURL + data["data"][i]["preview"]
+          p = requests.get(photoURL)
+          newsId = data["data"][i]["id"]
+          out = open(f"{newsId}.jpg", "wb")
+          out.write(p.content)
+          out.close()
+          photo = InputFile(f"{newsId}.jpg")
+        else:
+          photo = data["data"][i]["preview"]
       else:
-        photo = data["data"][i]["preview"]
+        photo = data["data"][i]["images"][0]
+
+      messageText = "<b>" + data["data"][i]["title"] + "</b>\n\n"
+      contentText = re.sub(r"<[^>]*>", " ", data["data"][i]["content"])
+      contentText = re.sub(r"&[^;]*;", " ", contentText)
+      contentText = contentText.strip()
+      contentText = re.sub(r" +", " ", contentText)
+      messageText = messageText + contentText[:283] + "..."
+      
+      btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
+      prev_page = InlineKeyboardButton("◀️", callback_data="prevPage")
+      current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage")
+      next_page = InlineKeyboardButton("▶️", callback_data="nextPage")
+      ikb_postURL = InlineKeyboardMarkup()
+      ikb_postURL.row(btn).row(prev_page, current_page, next_page)
+
+      await bot.send_photo(
+        chat_id=message.chat.id, 
+        photo=photo,
+        caption=messageText,
+        parse_mode="HTML",
+        reply_markup=ikb_postURL
+      )
+
+      if data["data"][i]["preview"] is not None:
+        if 'http' not in data["data"][i]["preview"]: 
+          os.remove(f"{newsId}.jpg")
+      i += 1
+  except Exception:
+    print("\n[WARN]:\n" + Exception + "\n[/WARN]\n")
+
+
+@dp.callback_query_handler(text="currentPage")
+async def current_page(callback : types.CallbackQuery):
+  try:
+    current_post = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
+    r = requests.get("http://127.0.0.1:8000/api/news?page=1&per_page=1")
+    data = r.json()
+    await callback.answer('Пост ' + current_post + ' из ' + str(data["meta"]["total"]))
+  except Exception:
+    print("\n[WARN]:\n" + Exception + "\n[/WARN]\n")
+
+
+@dp.callback_query_handler(text="prevPage")
+async def prev_page(callback : types.CallbackQuery):
+  try:
+    post_id = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
+    r = requests.get("http://127.0.0.1:8000/api/news?page=" + post_id + "&per_page=1")
+    data = r.json()
+    if data["links"]["prev"] == None:
+      await callback.answer("Свежих новостей больше нет", show_alert=True)
     else:
-      photo = data["data"][i]["images"][0]
+      await callback.answer("Предыдущая новость")
+      r = requests.get("http://127.0.0.1:8000/api/news" + data["links"]["prev"] + "&per_page=1")
+      data = r.json()
+      data["data"].reverse()
 
-    messageText = "<b>" + data["data"][i]["title"] + "</b>\n\n"
-    contentText = re.sub(r"<[^>]*>", " ", data["data"][i]["content"])
-    contentText = re.sub(r"&[^;]*;", " ", contentText)
-    contentText = contentText.strip()
-    contentText = re.sub(r" +", " ", contentText)
-    messageText = messageText + contentText[:283] + "..."
+      storageURL = "http://127.0.0.1:8000/storage/"
+
+      i = 0
+      while i < len(data["data"]):
+        if data["data"][i]["preview"] is not None:
+          if 'http' not in data["data"][i]["preview"]: 
+            photoURL = storageURL + data["data"][i]["preview"]
+            p = requests.get(photoURL)
+            newsId = data["data"][i]["id"]
+            out = open(f"{newsId}.jpg", "wb")
+            out.write(p.content)
+            out.close()
+            photo = InputFile(f"{newsId}.jpg")
+          else:
+            photo = data["data"][i]["preview"]
+        else:
+          photo = data["data"][i]["images"][0]
+
+        messageText = "<b>" + data["data"][i]["title"] + "</b>\n\n"
+        contentText = re.sub(r"<[^>]*>", " ", data["data"][i]["content"])
+        contentText = re.sub(r"&[^;]*;", " ", contentText)
+        contentText = contentText.strip()
+        contentText = re.sub(r" +", " ", contentText)
+        messageText = messageText + contentText[:283] + "..."
+        
+        btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
+        prev_page = InlineKeyboardButton("◀️", callback_data="prevPage")
+        current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage")
+        next_page = InlineKeyboardButton("▶️", callback_data="nextPage")
+        ikb_postURL = InlineKeyboardMarkup()
+        ikb_postURL.row(btn).row(prev_page, current_page, next_page)
+
+        await callback.message.delete()
+        await bot.send_photo(
+          chat_id=callback.get_current().message.chat.id, 
+          photo=photo,
+          caption=messageText,
+          parse_mode="HTML",
+          reply_markup=ikb_postURL
+        )
+
+        if data["data"][i]["preview"] is not None:
+          if 'http' not in data["data"][i]["preview"]: 
+            os.remove(f"{newsId}.jpg")
+        i += 1
+  except Exception:
+    print("\n[WARN]:\n" + Exception + "\n[/WARN]\n")
+
+
+@dp.callback_query_handler(text="nextPage")
+async def next_page(callback : types.CallbackQuery):
+  try:
+    post_id = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
+    r = requests.get("http://127.0.0.1:8000/api/news?page=" + post_id + "&per_page=1")
+    data = r.json()
+    if data["links"]["next"] == None:
+      await callback.answer("Новостей больше нет", show_alert=True)
+    else:
+      await callback.answer("Следующая новость")
+      r = requests.get("http://127.0.0.1:8000/api/news" + data["links"]["next"] + "&per_page=1")
+      data = r.json()
+      data["data"].reverse()
+
+      storageURL = "http://127.0.0.1:8000/storage/"
+
+      i = 0
+      while i < len(data["data"]):
+        if data["data"][i]["preview"] is not None:
+          if 'http' not in data["data"][i]["preview"]: 
+            photoURL = storageURL + data["data"][i]["preview"]
+            p = requests.get(photoURL)
+            newsId = data["data"][i]["id"]
+            out = open(f"{newsId}.jpg", "wb")
+            out.write(p.content)
+            out.close()
+            photo = InputFile(f"{newsId}.jpg")
+          else:
+            photo = data["data"][i]["preview"]
+        else:
+          photo = data["data"][i]["images"][0]
+
+        messageText = "<b>" + data["data"][i]["title"] + "</b>\n\n"
+        contentText = re.sub(r"<[^>]*>", " ", data["data"][i]["content"])
+        contentText = re.sub(r"&[^;]*;", " ", contentText)
+        contentText = contentText.strip()
+        contentText = re.sub(r" +", " ", contentText)
+        messageText = messageText + contentText[:283] + "..."
+        
+        btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
+        prev_page = InlineKeyboardButton("◀️", callback_data="prevPage")
+        current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage")
+        next_page = InlineKeyboardButton("▶️", callback_data="nextPage")
+        ikb_postURL = InlineKeyboardMarkup()
+        ikb_postURL.row(btn).row(prev_page, current_page, next_page)
+
+        await callback.message.delete()
+        await bot.send_photo(
+          chat_id=callback.get_current().message.chat.id, 
+          photo=photo,
+          caption=messageText,
+          parse_mode="HTML",
+          reply_markup=ikb_postURL
+        )
+
+        if data["data"][i]["preview"] is not None:
+          if 'http' not in data["data"][i]["preview"]: 
+            os.remove(f"{newsId}.jpg")
+        i += 1
+  except Exception:
+    print("\n[WARN]:\n" + Exception + "\n[/WARN]\n")
     
-    btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
-    ikb_postURL = InlineKeyboardMarkup()
-    ikb_postURL.row(btn)
-
-    await bot.send_photo(
-      chat_id=message.chat.id, 
-      photo=photo,
-      caption=messageText,
-      parse_mode="HTML",
-      reply_markup=ikb_postURL
-    )
-
-    if data["data"][i]["preview"] is not None:
-      if 'http' not in data["data"][i]["preview"]: 
-        os.remove(f"{newsId}.jpg")
-    i += 1
-
 
 async def get_schedules(message : types.Message):
   await FSMSchedules.group.set()
