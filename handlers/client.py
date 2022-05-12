@@ -296,7 +296,7 @@ async def input_day(message: types.Message, state: FSMContext):
           if str(data["group"]) == api[i]["lesson"]["group"]:
             if str(data["day"]) == api[i]["day"]:
               if str(data["group"]) == api[i]["lesson"]["group"]:
-                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '* _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
+                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
     if my_reply == '*Сейчас ' + week + ' неделя:*\n\n': 
       await message.answer(f'Пар на {data["day"]} не запланировано', reply_markup=kb_client)
     else:
@@ -326,7 +326,7 @@ async def input_day(message: types.Message, state: FSMContext):
           if str(data["group"]) == api[i]["lesson"]["group"]:
             if str(data["day"]) == api[i]["day"]:
               if str(data["group"]) == api[i]["lesson"]["group"]:
-                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '* _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n\n'
+                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
       if my_reply == '*Это будет ' + week + ' неделя:*\n\n': 
         await message.answer(f'Пар на {data["day"]} не запланировано', reply_markup=kb_client)
       else:
