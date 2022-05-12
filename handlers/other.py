@@ -24,7 +24,7 @@ async def echo_send(message : types.Message):
     #   await message.delete()
 
   else:
-    await message.answer('Я вас не понимаю...')
+    await message.reply('Я вас не понимаю...')
 
 def register_handlers_other(dp : Dispatcher):
   dp.register_message_handler(echo_send)
