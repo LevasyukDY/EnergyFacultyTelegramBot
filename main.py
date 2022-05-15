@@ -15,6 +15,7 @@ async def autoposting():
       print('[INFO]: Проверяю новые новости для автопостинга')
       r = requests.get("http://127.0.0.1:8000/api/news")
       data = r.json()
+      data["data"].reverse()
       news = []
       with open("news.txt", "r") as n:
         for line in n:
