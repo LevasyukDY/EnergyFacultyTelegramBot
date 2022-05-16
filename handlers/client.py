@@ -7,6 +7,7 @@ from aiogram import Dispatcher, types
 from keyboards import kb_client, kb_day, kb_cancel, kb_schedules
 from create_bot import bot, dp
 from datetime import datetime
+from config import SERVER_URL, WEBSITE_URL
 import requests, os, re
 
 
@@ -20,6 +21,10 @@ class FSMTeachers(StatesGroup):
   search = State()
 
 
+def get_schedules_reply(api, i):
+  return '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + '\n' + api[i]["lesson"]["teacher"]["surname"] + ' ' + api[i]["lesson"]["teacher"]["name"] + ' ' + api[i]["lesson"]["teacher"]["patronymic"] + '\n\n'
+
+
 async def command_start(message : types.Message):
   if message.chat.type == 'private':
     await bot.send_message(message.from_user.id, 
@@ -30,11 +35,11 @@ async def command_start(message : types.Message):
 async def get_news(message : types.Message):
   if message.chat.type == 'private':
     try:
-      r = requests.get("http://127.0.0.1:8000/api/news?per_page=1&page=1")
+      r = requests.get(SERVER_URL + "api/news?per_page=1&page=1")
       data = r.json()
       data["data"].reverse()
 
-      storageURL = "http://127.0.0.1:8000/storage/"
+      storageURL = SERVER_URL + "storage/"
 
       i = 0
       while i < len(data["data"]):
@@ -59,7 +64,7 @@ async def get_news(message : types.Message):
         contentText = re.sub(r" +", " ", contentText)
         messageText = messageText + contentText[:283] + "..."
         
-        btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
+        btn = InlineKeyboardButton("Читать", WEBSITE_URL + "news/" + str(data["data"][i]["id"]))
         prev_page = InlineKeyboardButton("◀️", callback_data="prevPage:" + str(data["links"]["prev"]))
         current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage:" + str(data["meta"]["current_page"]) + ':' + str(data["meta"]["total"]))
         next_page = InlineKeyboardButton("▶️", callback_data="nextPage:" + str(data["links"]["next"]))
@@ -86,7 +91,7 @@ async def get_news(message : types.Message):
 async def current_page(callback : types.CallbackQuery):
   try:
     # current_post = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
-    # r = requests.get("http://127.0.0.1:8000/api/news?page=1&per_page=1")
+    # r = requests.get(SERVER_URL + "api/news?page=1&per_page=1")
     # data = r.json()
     await callback.answer('Пост ' + callback.data.split(':')[1] + ' из ' + callback.data.split(':')[2])
   except Exception as ex:
@@ -103,13 +108,13 @@ async def prev_page(callback : types.CallbackQuery):
       await callback.answer("Свежих новостей больше нет", show_alert=True)
     else:
       await callback.answer("Предыдущая новость")
-      r = requests.get("http://127.0.0.1:8000/api/news?page=" + page_id.split('=')[1] + "&per_page=1")
+      r = requests.get(SERVER_URL + "api/news?page=" + page_id.split('=')[1] + "&per_page=1")
       data = r.json()
       data["data"].reverse()
-      # r = requests.get("http://127.0.0.1:8000/api/news" + data["links"]["prev"] + "&per_page=1")
+      # r = requests.get(SERVER_URL + "api/news" + data["links"]["prev"] + "&per_page=1")
       # data = r.json()
 
-      storageURL = "http://127.0.0.1:8000/storage/"
+      storageURL = SERVER_URL + "storage/"
 
       i = 0
       while i < len(data["data"]):
@@ -134,7 +139,7 @@ async def prev_page(callback : types.CallbackQuery):
         contentText = re.sub(r" +", " ", contentText)
         messageText = messageText + contentText[:283] + "..."
         
-        btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
+        btn = InlineKeyboardButton("Читать", WEBSITE_URL + "news/" + str(data["data"][i]["id"]))
         prev_page = InlineKeyboardButton("◀️", callback_data="prevPage:" + str(data["links"]["prev"]))
         current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage:" + str(data["meta"]["current_page"]) + ':' + str(data["meta"]["total"]))
         next_page = InlineKeyboardButton("▶️", callback_data="nextPage:" + str(data["links"]["next"]))
@@ -167,13 +172,13 @@ async def next_page(callback : types.CallbackQuery):
       await callback.answer("Новостей больше нет", show_alert=True)
     else:
       await callback.answer("Следующая новость")
-      r = requests.get("http://127.0.0.1:8000/api/news?page=" + page_id.split('=')[1] + "&per_page=1")
+      r = requests.get(SERVER_URL + "api/news?page=" + page_id.split('=')[1] + "&per_page=1")
       data = r.json()
-      # r = requests.get("http://127.0.0.1:8000/api/news" + data["links"]["next"] + "&per_page=1")
+      # r = requests.get(SERVER_URL + "api/news" + data["links"]["next"] + "&per_page=1")
       # data = r.json()
       data["data"].reverse()
 
-      storageURL = "http://127.0.0.1:8000/storage/"
+      storageURL = SERVER_URL + "storage/"
 
       i = 0
       while i < len(data["data"]):
@@ -198,7 +203,7 @@ async def next_page(callback : types.CallbackQuery):
         contentText = re.sub(r" +", " ", contentText)
         messageText = messageText + contentText[:283] + "..."
         
-        btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
+        btn = InlineKeyboardButton("Читать", WEBSITE_URL + "news/" + str(data["data"][i]["id"]))
         prev_page = InlineKeyboardButton("◀️", callback_data="prevPage:" + str(data["links"]["prev"]))
         current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage:" + str(data["meta"]["current_page"]) + ':' + str(data["meta"]["total"]))
         next_page = InlineKeyboardButton("▶️", callback_data="nextPage:" + str(data["links"]["next"]))
@@ -262,7 +267,7 @@ async def input_search(message: types.Message, state: FSMContext):
 
 async def input_teacher(message: types.Message, state: FSMContext):
   if message.chat.type == 'private':
-    r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + message.text)
+    r = requests.get(SERVER_URL + "api/schedules?teacher=" + message.text)
     api = r.json()
     if api == []:
       await message.answer('Не удалось найти такого преподавателя, попробуйте ещё раз', reply_markup=kb_cancel)
@@ -278,14 +283,14 @@ async def input_group(message: types.Message, state: FSMContext):
   if message.chat.type == 'private':
     temp = ''
     async with state.proxy() as data:
-      r = requests.get("http://127.0.0.1:8000/api/schedules")
+      r = requests.get(SERVER_URL + "api/schedules")
       api = r.json()
       for i in range(len(api)):
         if message.text.lower() == str(api[i]["lesson"]["group"]).lower():
           temp = api[i]["lesson"]["group"]
     if temp == '':
-      await message.answer('Такой группы нет', reply_markup=kb_client)
-      await state.finish()
+      await message.answer('Такой группы нет, попробуйте ещё раз', reply_markup=kb_cancel)
+      await FSMSchedules.group.set()
     else:
       async with state.proxy() as data:
         data['group'] = temp
@@ -303,18 +308,18 @@ async def input_day(message: types.Message, state: FSMContext):
     if (message.text.lower() == 'эта неделя'):
       async with state.proxy() as data:
         try:
-          r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + data["teacher"])
+          r = requests.get(SERVER_URL + "api/schedules?teacher=" + data["teacher"])
         except:
-          r = requests.get("http://127.0.0.1:8000/api/schedules")
+          r = requests.get(SERVER_URL + "api/schedules")
         api = r.json()
         my_reply = '*Сейчас ' + week + ' неделя:*\n\n'
         for i in range(len(api)):
           if week == api[i]["week_type"]:
             try:
               if str(data["group"]) == api[i]["lesson"]["group"]:
-                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ') – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+                my_reply = my_reply + get_schedules_reply(api, i)
             except:
-              my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ') – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+              my_reply = my_reply + get_schedules_reply(api, i)
         if my_reply == '*Сейчас ' + week + ' неделя:*\n\n': 
           await message.answer('Пар на этой неделе нет', reply_markup=kb_client)
         else:
@@ -332,9 +337,9 @@ async def input_day(message: types.Message, state: FSMContext):
         if str(input_weekday) == '6': data['day'] = 'ВС'
       async with state.proxy() as data:
         try:
-          r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + data["teacher"])
+          r = requests.get(SERVER_URL + "api/schedules?teacher=" + data["teacher"])
         except:
-          r = requests.get("http://127.0.0.1:8000/api/schedules")
+          r = requests.get(SERVER_URL + "api/schedules")
         api = r.json()
         my_reply = '*Сейчас ' + week + ' неделя:*\n\n'
         for i in range(len(api)):
@@ -342,9 +347,9 @@ async def input_day(message: types.Message, state: FSMContext):
             if str(data["day"]) == api[i]["day"]:
               try:
                 if str(data["group"]) == api[i]["lesson"]["group"]:
-                  my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+                  my_reply = my_reply + get_schedules_reply(api, i)
               except:
-                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+                my_reply = my_reply + get_schedules_reply(api, i)
       if my_reply == '*Сейчас ' + week + ' неделя:*\n\n': 
         await message.answer(f'Пар на {data["day"]} не запланировано', reply_markup=kb_client)
       else:
@@ -367,9 +372,9 @@ async def input_day(message: types.Message, state: FSMContext):
             week = "Верхняя"
       async with state.proxy() as data:
         try:
-          r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + data["teacher"])
+          r = requests.get(SERVER_URL + "api/schedules?teacher=" + data["teacher"])
         except:
-          r = requests.get("http://127.0.0.1:8000/api/schedules")
+          r = requests.get(SERVER_URL + "api/schedules")
         api = r.json()
         my_reply = '*Это будет ' + week + ' неделя:*\n\n'
         for i in range(len(api)):
@@ -377,9 +382,9 @@ async def input_day(message: types.Message, state: FSMContext):
             if str(data["day"]) == api[i]["day"]:
               try:
                 if str(data["group"]) == api[i]["lesson"]["group"]:
-                  my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+                  my_reply = my_reply + get_schedules_reply(api, i)
               except:
-                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+                my_reply = my_reply + get_schedules_reply(api, i)
         if my_reply == '*Это будет ' + week + ' неделя:*\n\n': 
           await message.answer(f'Пар на {data["day"]} не запланировано', reply_markup=kb_client)
         else:
@@ -392,18 +397,18 @@ async def input_day(message: types.Message, state: FSMContext):
         next_week = "Верхняя"
       async with state.proxy() as data:
         try:
-          r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + data["teacher"])
+          r = requests.get(SERVER_URL + "api/schedules?teacher=" + data["teacher"])
         except:
-          r = requests.get("http://127.0.0.1:8000/api/schedules")
+          r = requests.get(SERVER_URL + "api/schedules")
         api = r.json()
         my_reply = '*Будет ' + next_week + ' неделя:*\n\n'
         for i in range(len(api)):
           if next_week == api[i]["week_type"]:
             try:
               if str(data["group"]) == api[i]["lesson"]["group"]:
-                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ') – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+                my_reply = my_reply + get_schedules_reply(api, i)
             except:
-              my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ') – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+              my_reply = my_reply + get_schedules_reply(api, i)
         if my_reply == '*Будет ' + next_week + ' неделя:*\n\n': 
           await message.answer('Пар на следующей неделе нет', reply_markup=kb_client)
         else:
@@ -417,16 +422,17 @@ async def input_day(message: types.Message, state: FSMContext):
 async def input_full_name(message: types.Message, state: FSMContext):
   if message.chat.type == 'private':
     try:
-      r = requests.get("http://127.0.0.1:8000/api/teachers?full_name=" + message.text)
+      r = requests.get(SERVER_URL + "api/teachers?full_name=" + message.text)
       api = r.json()
       my_reply = ''
       for i in range(len(api)):
         my_reply = my_reply + '*' + api[i]["surname"] + ' ' + api[i]["name"] + ' ' + api[i]["patronymic"] + '*\n' + api[i]["post"] + ' ' + api[i]["chair"]["title"] + '\nТелефон: ' + api[i]["work_phone"] + '\nСсылка: ' + api[i]["link"] + '\n\n'
       await message.answer(my_reply, reply_markup=kb_client, parse_mode='Markdown', disable_web_page_preview=True)
-    except:
-      await message.answer('Не найдено преподавателей с таким ФИО', reply_markup=kb_client)
-    finally:
       await state.finish()
+    except:
+      await message.answer('Не найдено преподавателей с таким ФИО, попробуйте ещё раз', reply_markup=kb_cancel)
+      await FSMTeachers.search.set()
+      
 
 
 def register_handlers_client(dp : Dispatcher):

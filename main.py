@@ -3,17 +3,18 @@ from aiogram.utils import executor
 from handlers import client, other
 from create_bot import dp, bot
 from aiogram.types.input_file import InputFile
+from config import SERVER_URL
 import logging
 import requests
 import os, re
 
 
 async def autoposting():
-  storageURL = "http://127.0.0.1:8000/storage/"
+  storageURL = SERVER_URL + "storage/"
   while True:
     try:
       print('[INFO]: Проверяю новые новости для автопостинга')
-      r = requests.get("http://127.0.0.1:8000/api/news")
+      r = requests.get(SERVER_URL + "api/news")
       data = r.json()
       data["data"].reverse()
       news = []
