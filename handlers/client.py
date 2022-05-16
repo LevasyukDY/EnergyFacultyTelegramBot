@@ -1,6 +1,5 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher import FSMContext
-
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types.input_file import InputFile
 from aiogram.dispatcher.filters import Text
@@ -59,9 +58,9 @@ async def get_news(message : types.Message):
         messageText = messageText + contentText[:283] + "..."
         
         btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
-        prev_page = InlineKeyboardButton("◀️", callback_data="prevPage")
-        current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage")
-        next_page = InlineKeyboardButton("▶️", callback_data="nextPage")
+        prev_page = InlineKeyboardButton("◀️", callback_data="prevPage:" + str(data["links"]["prev"]))
+        current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage:" + str(data["meta"]["current_page"]) + ':' + str(data["meta"]["total"]))
+        next_page = InlineKeyboardButton("▶️", callback_data="nextPage:" + str(data["links"]["next"]))
         ikb_postURL = InlineKeyboardMarkup()
         ikb_postURL.row(btn).row(prev_page, current_page, next_page)
 
@@ -77,34 +76,36 @@ async def get_news(message : types.Message):
           if 'http' not in data["data"][i]["preview"]: 
             os.remove(f"{newsId}.jpg")
         i += 1
-    except Exception:
-      print("\n[WARN]:\n" + Exception + "\n[/WARN]\n")
+    except Exception as ex:
+      print(ex)
 
 
-@dp.callback_query_handler(text="currentPage")
+@dp.callback_query_handler(text_contains="currentPage")
 async def current_page(callback : types.CallbackQuery):
   try:
-    current_post = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
-    r = requests.get("http://127.0.0.1:8000/api/news?page=1&per_page=1")
-    data = r.json()
-    await callback.answer('Пост ' + current_post + ' из ' + str(data["meta"]["total"]))
-  except Exception:
-    print("\n[WARN]:\n" + Exception + "\n[/WARN]\n")
+    # current_post = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
+    # r = requests.get("http://127.0.0.1:8000/api/news?page=1&per_page=1")
+    # data = r.json()
+    await callback.answer('Пост ' + callback.data.split(':')[1] + ' из ' + callback.data.split(':')[2])
+  except Exception as ex:
+    print(ex)
 
 
-@dp.callback_query_handler(text="prevPage")
+@dp.callback_query_handler(text_contains="prevPage")
 async def prev_page(callback : types.CallbackQuery):
   try:
-    post_id = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
-    r = requests.get("http://127.0.0.1:8000/api/news?page=" + post_id + "&per_page=1")
-    data = r.json()
-    if data["links"]["prev"] == None:
+    page_id = callback.data.split(':')[1]
+    # post_id = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
+    
+    if page_id == 'None':
       await callback.answer("Свежих новостей больше нет", show_alert=True)
     else:
       await callback.answer("Предыдущая новость")
-      r = requests.get("http://127.0.0.1:8000/api/news" + data["links"]["prev"] + "&per_page=1")
+      r = requests.get("http://127.0.0.1:8000/api/news?page=" + page_id.split('=')[1] + "&per_page=1")
       data = r.json()
       data["data"].reverse()
+      # r = requests.get("http://127.0.0.1:8000/api/news" + data["links"]["prev"] + "&per_page=1")
+      # data = r.json()
 
       storageURL = "http://127.0.0.1:8000/storage/"
 
@@ -132,9 +133,9 @@ async def prev_page(callback : types.CallbackQuery):
         messageText = messageText + contentText[:283] + "..."
         
         btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
-        prev_page = InlineKeyboardButton("◀️", callback_data="prevPage")
-        current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage")
-        next_page = InlineKeyboardButton("▶️", callback_data="nextPage")
+        prev_page = InlineKeyboardButton("◀️", callback_data="prevPage:" + str(data["links"]["prev"]))
+        current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage:" + str(data["meta"]["current_page"]) + ':' + str(data["meta"]["total"]))
+        next_page = InlineKeyboardButton("▶️", callback_data="nextPage:" + str(data["links"]["next"]))
         ikb_postURL = InlineKeyboardMarkup()
         ikb_postURL.row(btn).row(prev_page, current_page, next_page)
 
@@ -151,22 +152,23 @@ async def prev_page(callback : types.CallbackQuery):
           if 'http' not in data["data"][i]["preview"]: 
             os.remove(f"{newsId}.jpg")
         i += 1
-  except Exception:
-    print("\n[WARN]:\n" + Exception + "\n[/WARN]\n")
+  except Exception as ex:
+    print(ex)
 
 
-@dp.callback_query_handler(text="nextPage")
+@dp.callback_query_handler(text_contains="nextPage")
 async def next_page(callback : types.CallbackQuery):
   try:
-    post_id = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
-    r = requests.get("http://127.0.0.1:8000/api/news?page=" + post_id + "&per_page=1")
-    data = r.json()
-    if data["links"]["next"] == None:
+    page_id = callback.data.split(':')[1]
+    # post_id = callback.get_current().message.reply_markup.inline_keyboard[0][0].url.split("/")[-1]
+    if page_id == 'None':
       await callback.answer("Новостей больше нет", show_alert=True)
     else:
       await callback.answer("Следующая новость")
-      r = requests.get("http://127.0.0.1:8000/api/news" + data["links"]["next"] + "&per_page=1")
+      r = requests.get("http://127.0.0.1:8000/api/news?page=" + page_id.split('=')[1] + "&per_page=1")
       data = r.json()
+      # r = requests.get("http://127.0.0.1:8000/api/news" + data["links"]["next"] + "&per_page=1")
+      # data = r.json()
       data["data"].reverse()
 
       storageURL = "http://127.0.0.1:8000/storage/"
@@ -195,9 +197,9 @@ async def next_page(callback : types.CallbackQuery):
         messageText = messageText + contentText[:283] + "..."
         
         btn = InlineKeyboardButton("Читать", "http://172.20.10.3:8080/news/" + str(data["data"][i]["id"]))
-        prev_page = InlineKeyboardButton("◀️", callback_data="prevPage")
-        current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage")
-        next_page = InlineKeyboardButton("▶️", callback_data="nextPage")
+        prev_page = InlineKeyboardButton("◀️", callback_data="prevPage:" + str(data["links"]["prev"]))
+        current_page = InlineKeyboardButton(str(data["meta"]["current_page"]) + '/' + str(data["meta"]["total"]), callback_data="currentPage:" + str(data["meta"]["current_page"]) + ':' + str(data["meta"]["total"]))
+        next_page = InlineKeyboardButton("▶️", callback_data="nextPage:" + str(data["links"]["next"]))
         ikb_postURL = InlineKeyboardMarkup()
         ikb_postURL.row(btn).row(prev_page, current_page, next_page)
 
@@ -214,8 +216,8 @@ async def next_page(callback : types.CallbackQuery):
           if 'http' not in data["data"][i]["preview"]: 
             os.remove(f"{newsId}.jpg")
         i += 1
-  except Exception:
-    print("\n[WARN]:\n" + Exception + "\n[/WARN]\n")
+  except Exception as ex:
+    print(ex)
 
 
 async def get_schedules(message : types.Message):
