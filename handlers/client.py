@@ -4,13 +4,15 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types.input_file import InputFile
 from aiogram.dispatcher.filters import Text
 from aiogram import Dispatcher, types
-from keyboards import kb_client, kb_day, kb_cancel
+from keyboards import kb_client, kb_day, kb_cancel, kb_schedules
 from create_bot import bot, dp
 from datetime import datetime
 import requests, os, re
 
 
 class FSMSchedules(StatesGroup):
+  search_type = State()
+  teacher = State()
   group = State()
   day = State()
 
@@ -222,8 +224,8 @@ async def next_page(callback : types.CallbackQuery):
 
 async def get_schedules(message : types.Message):
   if message.chat.type == 'private':
-    await FSMSchedules.group.set()
-    await message.answer('Введите свою группу', reply_markup=kb_cancel)
+    await FSMSchedules.search_type.set()
+    await message.answer('Выберите тип поиска', reply_markup=kb_schedules)
 
 
 async def get_teachers(message : types.Message):
@@ -239,6 +241,37 @@ async def cancel_state(message: types.Message, state: FSMContext):
       return
     await state.finish()
     await message.answer('ОК', reply_markup=kb_client)
+
+
+async def input_search(message: types.Message, state: FSMContext):
+  if message.chat.type == 'private':
+    if message.text.lower() == 'по преподавателю':
+      async with state.proxy() as data:
+        data['search_type'] = message.text
+      await message.answer('Введите фамилию преподавателя', reply_markup=kb_cancel)
+      await FSMSchedules.teacher.set()
+    elif message.text.lower() == 'по группе':
+      async with state.proxy() as data:
+        data['search_type'] = message.text
+      await message.answer('Введите группу', reply_markup=kb_cancel)
+      await FSMSchedules.group.set()
+    else:
+      await message.answer('Я вас не понимаю...', reply_markup=kb_client)
+      await state.finish()
+
+
+async def input_teacher(message: types.Message, state: FSMContext):
+  if message.chat.type == 'private':
+    r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + message.text)
+    api = r.json()
+    if api == []:
+      await message.answer('Не удалось найти такого преподавателя, попробуйте ещё раз', reply_markup=kb_cancel)
+      await FSMSchedules.teacher.set()
+    else:
+      async with state.proxy() as data:
+        data['teacher'] = message.text
+      await message.answer('Введите день', reply_markup=kb_day)
+      await FSMSchedules.day.set()
 
 
 async def input_group(message: types.Message, state: FSMContext):
@@ -269,12 +302,18 @@ async def input_day(message: types.Message, state: FSMContext):
 
     if (message.text.lower() == 'эта неделя'):
       async with state.proxy() as data:
-        r = requests.get("http://127.0.0.1:8000/api/schedules")
+        try:
+          r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + data["teacher"])
+        except:
+          r = requests.get("http://127.0.0.1:8000/api/schedules")
         api = r.json()
         my_reply = '*Сейчас ' + week + ' неделя:*\n\n'
         for i in range(len(api)):
           if week == api[i]["week_type"]:
-            if str(data["group"]) == api[i]["lesson"]["group"]:
+            try:
+              if str(data["group"]) == api[i]["lesson"]["group"]:
+                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ') – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+            except:
               my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ') – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
         if my_reply == '*Сейчас ' + week + ' неделя:*\n\n': 
           await message.answer('Пар на этой неделе нет', reply_markup=kb_client)
@@ -292,15 +331,20 @@ async def input_day(message: types.Message, state: FSMContext):
         if str(input_weekday) == '5': data['day'] = 'СБ'
         if str(input_weekday) == '6': data['day'] = 'ВС'
       async with state.proxy() as data:
-        r = requests.get("http://127.0.0.1:8000/api/schedules")
+        try:
+          r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + data["teacher"])
+        except:
+          r = requests.get("http://127.0.0.1:8000/api/schedules")
         api = r.json()
         my_reply = '*Сейчас ' + week + ' неделя:*\n\n'
         for i in range(len(api)):
           if week == api[i]["week_type"]:
-            if str(data["group"]) == api[i]["lesson"]["group"]:
-              if str(data["day"]) == api[i]["day"]:
+            if str(data["day"]) == api[i]["day"]:
+              try:
                 if str(data["group"]) == api[i]["lesson"]["group"]:
                   my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+              except:
+                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
       if my_reply == '*Сейчас ' + week + ' неделя:*\n\n': 
         await message.answer(f'Пар на {data["day"]} не запланировано', reply_markup=kb_client)
       else:
@@ -322,15 +366,20 @@ async def input_day(message: types.Message, state: FSMContext):
           else:
             week = "Верхняя"
       async with state.proxy() as data:
-        r = requests.get("http://127.0.0.1:8000/api/schedules")
+        try:
+          r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + data["teacher"])
+        except:
+          r = requests.get("http://127.0.0.1:8000/api/schedules")
         api = r.json()
         my_reply = '*Это будет ' + week + ' неделя:*\n\n'
         for i in range(len(api)):
           if week == api[i]["week_type"]:
-            if str(data["group"]) == api[i]["lesson"]["group"]:
-              if str(data["day"]) == api[i]["day"]:
+            if str(data["day"]) == api[i]["day"]:
+              try:
                 if str(data["group"]) == api[i]["lesson"]["group"]:
                   my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+              except:
+                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ')' + ' – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
         if my_reply == '*Это будет ' + week + ' неделя:*\n\n': 
           await message.answer(f'Пар на {data["day"]} не запланировано', reply_markup=kb_client)
         else:
@@ -342,12 +391,18 @@ async def input_day(message: types.Message, state: FSMContext):
       else:
         next_week = "Верхняя"
       async with state.proxy() as data:
-        r = requests.get("http://127.0.0.1:8000/api/schedules")
+        try:
+          r = requests.get("http://127.0.0.1:8000/api/schedules?teacher=" + data["teacher"])
+        except:
+          r = requests.get("http://127.0.0.1:8000/api/schedules")
         api = r.json()
         my_reply = '*Будет ' + next_week + ' неделя:*\n\n'
         for i in range(len(api)):
           if next_week == api[i]["week_type"]:
-            if str(data["group"]) == api[i]["lesson"]["group"]:
+            try:
+              if str(data["group"]) == api[i]["lesson"]["group"]:
+                my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ') – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
+            except:
               my_reply = my_reply + '*' + api[i]["day"] + ' ' + api[i]["class_time"]["start_time"][:5] + '*\n' + api[i]["lesson"]["discipline"] + ' (' + api[i]["class_type"] + ') – _' + str(api[i]["classroom"]["corps"]) + '-' + str(api[i]["classroom"]["cabinet"]) + '_' + '\n\n'
         if my_reply == '*Будет ' + next_week + ' неделя:*\n\n': 
           await message.answer('Пар на следующей неделе нет', reply_markup=kb_client)
@@ -381,6 +436,8 @@ def register_handlers_client(dp : Dispatcher):
   dp.register_message_handler(get_teachers, Text(equals='персоналии', ignore_case=True), state=None)
   dp.register_message_handler(cancel_state, state="*", commands='отмена')
   dp.register_message_handler(cancel_state, Text(equals='отмена', ignore_case=True), state="*")
+  dp.register_message_handler(input_search, state=FSMSchedules.search_type)
+  dp.register_message_handler(input_teacher, state=FSMSchedules.teacher)
   dp.register_message_handler(input_group, state=FSMSchedules.group)
   dp.register_message_handler(input_day, state=FSMSchedules.day)
   dp.register_message_handler(input_full_name, state=FSMTeachers.search)
