@@ -27,6 +27,14 @@ def get_schedules_reply(api, i):
 
 async def command_start(message : types.Message):
   if message.chat.type == 'private':
+    users = []
+    with open("users.txt", "r") as n:
+      for line in n:
+        users.append(line.strip('\n'))
+    thisUser = message.from_user.username + ':' + str(message.from_user.id)
+    if thisUser not in users:
+      with open('users.txt', 'a') as file:
+        file.write(thisUser + '\n')
     await bot.send_message(message.from_user.id, 
       'Привет!\nПока что я почти ничего не умею, но скоро это исправится.\n\nМожешь пока написать мне: /start, /help, "привет", "пока", "сколько время?" или "который час?".', reply_markup=kb_client)
     await message.delete()

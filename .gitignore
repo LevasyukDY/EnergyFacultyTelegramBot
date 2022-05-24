@@ -1,5 +1,6 @@
 .DS_Store
 cenz.txt
+users.txt
 
 # Bot token.
 config.py 

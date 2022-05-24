@@ -9,6 +9,49 @@ import requests
 import os, re
 
 
+async def autosend_group_news():
+  while True:
+    try:
+      print('[INFO]: Проверяю новые новости групп для рассылки')
+      r = requests.get(SERVER_URL + "api/group-news")
+      data = r.json()
+      data["data"].reverse()
+      group_news = []
+      with open("group_news.txt", "r") as f:
+        for line in f:
+          group_news.append(line.strip('\n'))
+      users = []
+      with open("users.txt", "r") as f:
+        for line in f:
+          users.append(line.strip('\n'))
+
+      i = 0
+      j = 0
+      h = 0
+      while i < len(data["data"]):
+        if str(data["data"][i]["id"]) not in group_news:
+          with open('group_news.txt', 'a') as f:
+            f.write(str(data["data"][i]["id"]) + '\n')
+          while j < len(data["data"][i]["students_tg_usernames"]):
+            student_username_from_api = data["data"][i]["students_tg_usernames"][j][1:]
+            while h < len(users):
+              if student_username_from_api == users[h].split(':')[0]:
+                chat_id = users[h].split(':')[1]
+                contentText = re.sub(r"<[^>]*>", " ", data["data"][i]["content"])
+                contentText = re.sub(r"&[^;]*;", " ", contentText)
+                contentText = contentText.strip()
+                contentText = re.sub(r" +", " ", contentText)
+                message_text = '<b>Новая запись в группе:</b>\n' + contentText
+                await bot.send_message(chat_id=chat_id, text=message_text, parse_mode='HTML')
+              h += 1
+            j += 1
+        i += 1
+
+      await asyncio.sleep(20)
+    except Exception as e:
+      print(e)
+
+
 async def autoposting():
   storageURL = SERVER_URL + "storage/"
   while True:
@@ -68,6 +111,7 @@ async def autoposting():
 async def on_sturtup(_):
   print('\n\n\n<---------- БОТ ВЫШЕЛ В ОНЛАЙН ---------->\n')
   asyncio.create_task(autoposting())
+  asyncio.create_task(autosend_group_news())
 
 logging.basicConfig(level=logging.INFO)
 
