@@ -41,7 +41,7 @@ async def autosend_group_news():
                 contentText = re.sub(r"&[^;]*;", " ", contentText)
                 contentText = contentText.strip()
                 contentText = re.sub(r" +", " ", contentText)
-                message_text = '<b>Новая запись в группе:</b>\n' + contentText
+                message_text = '<b>Новая запись в группе\nот ' + data["data"][i]["author"] + ':</b>\n' + contentText
                 await bot.send_message(chat_id=chat_id, text=message_text, parse_mode='HTML')
               h += 1
             j += 1
