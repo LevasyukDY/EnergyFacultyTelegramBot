@@ -33,7 +33,7 @@ async def autosend_group_news():
           with open('group_news.txt', 'a') as f:
             f.write(str(data["data"][i]["id"]) + '\n')
           while j < len(data["data"][i]["students_tg_usernames"]):
-            student_username_from_api = data["data"][i]["students_tg_usernames"][j][1:]
+            student_username_from_api = data["data"][i]["students_tg_usernames"][j]
             while h < len(users):
               if student_username_from_api == users[h].split(':')[0]:
                 chat_id = users[h].split(':')[1]
@@ -47,7 +47,7 @@ async def autosend_group_news():
             j += 1
         i += 1
 
-      await asyncio.sleep(20)
+      await asyncio.sleep(5)
     except Exception as e:
       print(e)
 
