@@ -434,8 +434,7 @@ async def input_full_name(message: types.Message, state: FSMContext):
       api = r.json()
       my_reply = ''
       for i in range(len(api)):
-        chair_cabinet = api[i]["chair"]["address"].split(' ')[-1]
-        my_reply = my_reply + '*' + api[i]["surname"] + ' ' + api[i]["name"] + ' ' + api[i]["patronymic"] + '*\n' + api[i]["post"] + ' ' + api[i]["chair"]["title"] + ' каб. ' + chair_cabinet + '\nТелефон: ' + api[i]["work_phone"] + '\nСсылка: ' + api[i]["link"] + '\n\n'
+        my_reply = my_reply + '*' + api[i]["surname"] + ' ' + api[i]["name"] + ' ' + api[i]["patronymic"] + '*\n' + api[i]["post"] + ' ' + api[i]["chair"]["title"] + ' каб. ' + api[i]["chair"]["cabinet"] + '\nТелефон: ' + api[i]["work_phone"] + '\nСсылка: ' + api[i]["link"] + '\n\n'
       await message.answer(my_reply, reply_markup=kb_client, parse_mode='Markdown', disable_web_page_preview=True)
       await state.finish()
     except:
