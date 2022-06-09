@@ -36,8 +36,8 @@ async def command_start(message : types.Message):
       with open('users.txt', 'a') as file:
         file.write(thisUser + '\n')
     await bot.send_message(message.from_user.id, 
-      'Привет!\nЯ Telegram-бот Энергетического факультета ЗабГУ.\nЯ умею присылать новости факультета, искать расписание по группе и по преподавателю, а также находить контактные данные сотрудника факультета.\n\nСнизу есть кнопки для удобного взаимодействия со мной, если их нет напиши мне "/start" или "/help"', reply_markup=kb_client)
-    # await message.delete()
+      'Привет!\nЯ Telegram-бот Энергетического факультета ЗабГУ.\nЯ умею присылать новости факультета, искать расписание по группе и по преподавателю, а также находить контактные данные сотрудника факультета.\n\nСнизу есть кнопки для удобного взаимодействия со мной, если их нет напиши мне /start или /help\n\nТакже я администрирую новостной Telegram-канал @zabgu_energy_faculty', reply_markup=kb_client)
+    await message.delete()
 
 
 async def get_news(message : types.Message):
